@@ -1,3 +1,6 @@
+import binascii
+
+
 class Atom:
     
     def __init__(self, name, start, size):
@@ -5,41 +8,40 @@ class Atom:
         self.start = start
         self.size = size
     def __str__(self):
-        return f'name-{self.name} start-{self.start} size-{self.size}'    
-
-def file_to_hexstr(file_name):
-    with open(file_name, 'rb') as file:
-        bytes = file.read()
-    hex_list = []
-    for b in bytes:
-        if int(b) < 16:
-            hex_list.append(f'0{hex(b)[2:]}')
-        else:
-            hex_list.append(hex(b)[2:])
-    return ''.join(hex_list)
+        return f'name-{self.name} start-{self.start} size-{self.size}'
+    def chunk_name(self):
+        return self.name   
 
 
-def create_atoms(hex_str):
-    structure = []
-    len_str = len(hex_str)
-    i = 0
-    flag = False
-    while i < len_str:
-        for key in sign:
-            if hex_str.startswith(sign[key][1], i):
-                structure.append(Atom(key, i // 2 - 4, hex_str[i - 8:i]))
-                flag = True
-                if sign[key][0] == 0:
-                    i += int(hex_str[i - 8:i], 16)
-                else:
-                    i += 1
-                break
-        if flag:
-            flag = False
-        else:
-            i += 1                
-    return structure
-        
+class Stsc(Atom):
+
+    def __init__(self, name, start, size, stsc):
+        super().__init__(name, start, size)
+        i = int.from_bytes(stsc[12:16])
+        self.entery_count = i
+    def chunks_offset(self, stsc):
+        map_chank = dict()
+        for i in range(self.entery_count):
+            map_chank[str(int.from_bytes(stsc[self.start + 16 + i * 12:self.start + 20 + i * 12]))] = map_chank.get(str(int.from_bytes(stsc[self.start + 16 + i * 12:self.start + 20 + i * 12])), 0) + int.from_bytes(stsc[self.start + 20 + i * 12:self.start + 24 + i * 12])
+        return map_chank
+
+       
+def tag_to_hexstr(st):
+    return '0x'+''.join([str(hex(ord(i)))[2:4] for i in (st)])
+
+def create_atoms(hex_file):
+    struc = []
+    for atom in sign:
+        start = hex_file.find(binascii.unhexlify(sign[atom][1]), 4)
+        while start > 0:
+            struc.append(Atom(atom, start - 4,int.from_bytes(hex_file[start - 4:start])))
+            start = hex_file.find(binascii.unhexlify(sign[atom][1]), start+1)
+            # print(start)
+            # start +=1
+    return struc        
+
+
+
 sign = {
     'ftyp': [1, '66747970'],
     'mdat': [0, '6d646174'],
@@ -65,15 +67,12 @@ sign = {
 
 
 }
-# struc = create_atoms(file_to_hexstr('1.mp4'))
-# for st in struc:
-#    print(st)
-with open('2.mp4', 'rb') as file:
-    bytes = file.read()
-i = 0
-len_str = len(bytes)
-while i :=bytes.find(b'\x74\x72\x61\x6b', i, len_str):
-    print(i)
-    i += 1
-    pass
-pass
+with open('1.mp4', 'rb') as file1:
+    str_1 = file1.read()
+    struc = create_atoms(str_1)
+for st in struc:
+    if st.chunk_name() == 'stsc':
+        stsc_obj = Stsc(st.name, st.start, st.size, str_1[st.start:st.start + st.size])
+        print(stsc_obj.chunks_offset(str_1[st.start:st.start + st.size]))    
+
+
