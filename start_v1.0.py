@@ -3,14 +3,20 @@ import binascii
 
 class Atom:
     
-    def __init__(self, name, start, size):
+    def __init__(self, name, start, size, subAtoms=None):
         self.name = name
         self.start = start
         self.size = size
+        if subAtoms is None:
+            self.subAtoms = list()
+        else:
+            self.subAtoms = subAtoms    
     def __str__(self):
         return f'name-{self.name} start-{self.start} size-{self.size}'
-    def chunk_name(self):
-        return self.name   
+    def get_name(self):
+        return self.name 
+    def add_subAtoms(self, subAtoms)
+        self.subAtoms.extend(subAtoms)
 
 
 class Stsc(Atom):
@@ -26,8 +32,8 @@ class Stsc(Atom):
         return map_chank
 
        
-def tag_to_hexstr(st):
-    return '0x'+''.join([str(hex(ord(i)))[2:4] for i in (st)])
+# def tag_to_hexstr(st):
+#     return '0x'+''.join([str(hex(ord(i)))[2:4] for i in (st)])
 
 def create_atoms(hex_file):
     struc = []
@@ -67,6 +73,8 @@ sign = {
 
 
 }
+
+
 with open('1.mp4', 'rb') as file1:
     str_1 = file1.read()
     struc = create_atoms(str_1)
