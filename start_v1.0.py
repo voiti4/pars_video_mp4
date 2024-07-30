@@ -1,5 +1,7 @@
 import binascii
 
+import utils
+
 
 class Atom:
     
@@ -108,16 +110,28 @@ def main(file):
     with open(file, 'rb') as file1:
         limit = get_file_size(file1)
         tree = create_atom_list(file1, limit)
-        for el in tree:
-            el.print_item()
-        print(find_atom(tree, b'stsz'))    
+        # for el in tree:
+            # el.print_item()
+        print(utils.devide_keyframe(make_list_size(file1, find_atom(tree, b'stsz')[0])))
+ 
 
 def find_atom(tree, tag):
     for el in tree:
         if el.get_name() == tag:
             return [el.get_start(), el.get_size()]
         elif el.subAtoms:
-            find_atom(el.subAtoms, tag)
+            return find_atom(el.subAtoms, tag)
+
+def make_list_size(file, start, step=4, offset=16):
+    start += offset
+    file.seek(start)
+    count = int.from_bytes(file.read(4))
+    lt = list()
+    for i in range(1, count):
+        lt.append(int.from_bytes(file.read(step)))
+    return lt
+
+
 
 
 main('1.mp4')
