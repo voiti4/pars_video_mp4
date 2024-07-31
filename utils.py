@@ -3,17 +3,17 @@
 def devide_keyframe(arrOfSize):
     maxSize = minSize = arrOfSize[0]
     for el in  arrOfSize:
-        if el / minSize > 2:
+        if el / minSize > 5:
             maxSize = el
             break
-        elif el / minSize < 0.5:
+        elif el / minSize < 0.2:
             minSize = el
             break
     else:
         return [minSize, maxSize]
     countMin = countMax = sumMin = sumMax = 0
     for el in arrOfSize:
-        if el / maxSize > 0.5:
+        if el / maxSize > 0.33:
             sumMax += el
             countMax += 1
         else:

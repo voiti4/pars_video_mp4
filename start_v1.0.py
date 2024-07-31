@@ -91,8 +91,9 @@ def create_atom_list(file, limit):
                 size = int.from_bytes(file.read(4))
                 file.seek(4, 1)
                 curAtom = Atom(tag, start, size)
-                subAtoms = create_atom_list(file, size - 8)
-                curAtom.add_subAtoms(subAtoms)
+                if tag != b'mdat':
+                    subAtoms = create_atom_list(file, size - 8)
+                    curAtom.add_subAtoms(subAtoms)
             else:
                 file.seek(-3, 1)
         except EOFError:
@@ -112,7 +113,7 @@ def main(file):
         tree = create_atom_list(file1, limit)
         # for el in tree:
             # el.print_item()
-        print(utils.devide_keyframe(make_list_size(file1, find_atom(tree, b'stsz')[0])))
+        print(define_feature_key(file1, tree))
  
 
 def find_atom(tree, tag):
@@ -122,19 +123,60 @@ def find_atom(tree, tag):
         elif el.subAtoms:
             return find_atom(el.subAtoms, tag)
 
-def make_list_size(file, start, step=4, offset=16):
+def make_list_stbl_atoms(file, start, step=4, offset=12):
     start += offset
     file.seek(start)
-    count = int.from_bytes(file.read(4))
+    count = int.from_bytes(file.read(step))
     lt = list()
     for i in range(1, count):
         lt.append(int.from_bytes(file.read(step)))
     return lt
 
+def define_keyframes(file, tree):
+    stss = find_atom(tree, b'stss')
+    stco = find_atom(tree, b'stco')
+    stsz = find_atom(tree, b'stsz')
+    if stss is not None:
+        stss_data = make_list_stbl_atoms(file, stss[0])
+        stco_data = make_list_stbl_atoms(file, stco[0])
+        stsz_data = make_list_stbl_atoms(file, stsz[0], 4, 16)
+        lt = list()
+        for i in stss_data:
+            lt.append((stco_data[i - 1], stsz_data[i - 1]))
+        return lt    
+                       
+def metrika(data1, data2, template):
+    length = min(len(data1), len(data2))
+    for i in range(0, length):
+        if template[i]:
+            if data1[i] != data2[i]:
+                template[i] = False
+    return template               
+
+def define_feature_key(file, tree, size=64):
+    lt = define_keyframes(file, tree)
+    first = lt[0]
+    featureMatrix = [True for i in range(0, size)]
+    j = 0
+    for current in lt:
+        file.seek(first[0])
+        dataFirst = file.read(size)
+        file.seek(current[0])
+        dataCurrent = file.read(size)
+        featureMatrix = metrika(dataFirst, dataCurrent, featureMatrix)
+        j += 1
+    return featureMatrix    
 
 
 
-main('1.mp4')
+     
+
+def define_feature_differnce(file, tree):
+    pass
+
+
+
+main('FILE0137.MOV')
         
 
 
