@@ -107,13 +107,14 @@ def create_atom_list(file, limit):
     return atoms          
                 
 
-def main(file):
-    with open(file, 'rb') as file1:
-        limit = get_file_size(file1)
-        tree = create_atom_list(file1, limit)
+def main(fileDemage, fileTemplate):
+    with open(fileDemage,'rb') as fileDemage, open(fileTemplate, 'rb') as fileTemplate:
+        # limit = get_file_size(file1)
+        # tree = create_atom_list(file1, limit)
         # for el in tree:
             # el.print_item()
-        print(define_feature_key(file1, tree))
+
+        print(find_key_in_damage(fileDemage, fileTemplate))
  
 
 def find_atom(tree, tag):
@@ -132,8 +133,8 @@ def make_list_stbl_atoms(file, start, step=4, offset=12):
         lt.append(int.from_bytes(file.read(step)))
     return lt
 
-def define_keyframes(file, tree):
-    stss = find_atom(tree, b'stss')
+def define_keyframes(file):
+    """ stss = find_atom(tree, b'stss')
     stco = find_atom(tree, b'stco')
     stsz = find_atom(tree, b'stsz')
     if stss is not None:
@@ -143,7 +144,23 @@ def define_keyframes(file, tree):
         lt = list()
         for i in stss_data:
             lt.append((stco_data[i - 1], stsz_data[i - 1]))
-        return lt    
+        return lt     """
+    limit = get_file_size(file)
+    tree = create_atom_list(file, limit)
+    stss = find_atom(tree, b'stss')
+    stsz = find_atom(tree, b'stsz')
+    stco = find_atom(tree, b'stco')
+    if stss is not None:
+        keyList = list()
+        stss_data = make_list_stbl_atoms(file, stss[0])
+        stsz_data = make_list_stbl_atoms(file, stsz[0], 4, 16)
+        stco_data = make_list_stbl_atoms(file, stco[0])
+        lt = [stsz_data[stss_data[i]] for i in range(0, len(stss_data))]
+        minSize = 2 * min(lt) - max(lt)
+        for i in range (0, len(stsz_data)):
+            if stsz_data[i] > minSize:
+                keyList.append((stco_data[i], stsz_data[i]))
+        return keyList 
                        
 def metrika(data1, data2, template):
     length = min(len(data1), len(data2))
@@ -153,30 +170,66 @@ def metrika(data1, data2, template):
                 template[i] = False
     return template               
 
-def define_feature_key(file, tree, size=64):
-    lt = define_keyframes(file, tree)
+def find_pos_sizevalue(data, template, size=4):
+   
+    for i in range(0, len(data) - size + 1):
+        if int.from_bytes(data[i:i + size]) == template - size - i:
+            return i
+
+def define_feature_key(file, size=60):
+    limit = get_file_size(file)
+    tree = create_atom_list(file, limit)
+    lt = define_keyframes(file)
     first = lt[0]
     featureMatrix = [True for i in range(0, size)]
-    j = 0
+    stsz = find_atom(tree, b'stsz')
+    stsz_data = make_list_stbl_atoms(file, stsz[0], 4, 16)
+    file.seek(first[0])
+    dataFirst = file.read(size)
+    pos = find_pos_sizevalue(dataFirst, stsz_data[0])
     for current in lt:
-        file.seek(first[0])
-        dataFirst = file.read(size)
+        # file.seek(first[0])
+        # dataFirst = file.read(size)
         file.seek(current[0])
         dataCurrent = file.read(size)
         featureMatrix = metrika(dataFirst, dataCurrent, featureMatrix)
-        j += 1
-    return featureMatrix    
+        dataFirst = dataCurrent
+    return (dataFirst, featureMatrix, pos)
 
-
-
+def find_key_in_damage(fileDamage, fileExample):
+    feature_key = define_feature_key(fileExample)
+    limit = get_file_size(fileDamage)
+    templateSize = len(feature_key[0])
+    posSize = feature_key[2]
+    pos = 0
+    fileDamage.seek(pos)
+    lt = list()
+    while pos < limit - templateSize:
+        currentData = fileDamage.read(templateSize)
+        for i in range(0, templateSize):
+            if feature_key[1][i]:
+                if feature_key[0][i] != currentData[i]:
+                    pos += 1
+                    fileDamage.seek(pos)
+                    break
+        else:
+            keySize = int.from_bytes(currentData[posSize:posSize + 4])
+            if pos + posSize + keySize <= limit:
+                lt.append((pos, keySize))
+                pos += (posSize + keySize)
+            else:
+                pos += 1
+    return lt
      
+def make_key_file(fileDamage, fileTemplate):
+    pass
 
 def define_feature_differnce(file, tree):
     pass
 
 
 
-main('FILE0137.MOV')
+main('562965', 'FILE0137.MOV')
         
 
 
