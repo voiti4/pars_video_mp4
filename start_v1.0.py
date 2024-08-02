@@ -1,6 +1,9 @@
+from os import path
+
 import binascii
 
 import utils
+
 
 
 class Atom:
@@ -113,8 +116,8 @@ def main(fileDemage, fileTemplate):
         # tree = create_atom_list(file1, limit)
         # for el in tree:
             # el.print_item()
-
-        print(find_key_in_damage(fileDemage, fileTemplate))
+        # print(fileDemage.name)
+        make_key_file(fileDemage, fileTemplate)
  
 
 def find_atom(tree, tag):
@@ -155,8 +158,8 @@ def define_keyframes(file):
         stss_data = make_list_stbl_atoms(file, stss[0])
         stsz_data = make_list_stbl_atoms(file, stsz[0], 4, 16)
         stco_data = make_list_stbl_atoms(file, stco[0])
-        lt = [stsz_data[stss_data[i]] for i in range(0, len(stss_data))]
-        minSize = 2 * min(lt) - max(lt)
+        lt = [stsz_data[stss_data[i]-1] for i in range(0, len(stss_data))]
+        minSize = min(lt)
         for i in range (0, len(stsz_data)):
             if stsz_data[i] > minSize:
                 keyList.append((stco_data[i], stsz_data[i]))
@@ -187,14 +190,19 @@ def define_feature_key(file, size=60):
     file.seek(first[0])
     dataFirst = file.read(size)
     pos = find_pos_sizevalue(dataFirst, stsz_data[0])
+    minSize = maxSize = lt[0][1]
     for current in lt:
         # file.seek(first[0])
         # dataFirst = file.read(size)
+        if current[1] < minSize:
+            minSize = current[1]
+        elif current[1] > maxSize:
+            maxSize = current[1]    
         file.seek(current[0])
         dataCurrent = file.read(size)
         featureMatrix = metrika(dataFirst, dataCurrent, featureMatrix)
         dataFirst = dataCurrent
-    return (dataFirst, featureMatrix, pos)
+    return (dataFirst, featureMatrix, pos, minSize, maxSize)
 
 def find_key_in_damage(fileDamage, fileExample):
     feature_key = define_feature_key(fileExample)
@@ -213,8 +221,8 @@ def find_key_in_damage(fileDamage, fileExample):
                     fileDamage.seek(pos)
                     break
         else:
-            keySize = int.from_bytes(currentData[posSize:posSize + 4])
-            if pos + posSize + keySize <= limit:
+            keySize = posSize + int.from_bytes(currentData[posSize:posSize + 4]) + 4
+            if (pos + posSize + keySize <= limit) and (keySize > feature_key[3] - 100) and (keySize < feature_key[4] + 100):
                 lt.append((pos, keySize))
                 pos += (posSize + keySize)
             else:
@@ -222,7 +230,14 @@ def find_key_in_damage(fileDamage, fileExample):
     return lt
      
 def make_key_file(fileDamage, fileTemplate):
-    pass
+   
+    keyFrames = find_key_in_damage(fileDamage, fileTemplate)
+    name = 'KeyFrame_' + fileDamage.name
+    with open(name,'wb') as fileTarget:
+        for key in keyFrames:
+            fileDamage.seek(key[0])
+            fileTarget.write(fileDamage.read(key[1]))
+    
 
 def define_feature_differnce(file, tree):
     pass
