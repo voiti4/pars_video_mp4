@@ -21,6 +21,13 @@ def devide_keyframe(arrOfSize):
             countMin += 1
     return [sumMin / countMin, sumMax / countMax]
 
+def metrika(data1, data2, template):
+    length = min(len(data1), len(data2))
+    for i in range(0, length):
+        if template[i]:
+            if data1[i] != data2[i]:
+                template[i] = False
+    return template  
 
 
 
