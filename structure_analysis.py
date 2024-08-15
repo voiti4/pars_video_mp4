@@ -1,5 +1,7 @@
 import data_structure as ds
 
+# import create_mov as cm
+
 import utils
 
 
@@ -45,7 +47,8 @@ def main(fileDemage, fileTemplate):
         # for el in tree:
             # el.print_item()
         # print(fileDemage.name)
-        make_key_file(fileDemage, fileTemplate)
+        # cm.make_key_file(fileDemage, fileTemplate)
+        pass
  
 
 def find_atom(tree, tag):
@@ -159,7 +162,7 @@ def define_feature_differnce(file, tree):
 
 
 
-main('562965', 'FILE0137.MOV')
+# main('562965', 'FILE0137.MOV')
         
 
 

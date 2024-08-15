@@ -2,6 +2,8 @@ import structure_analysis as sa
 
 import data_structure as ds
 
+import utils
+
 def make_key_file(fileDamage, fileTemplate):
    
     keyFrames = sa.find_key_in_damage(fileDamage, fileTemplate)
@@ -14,9 +16,22 @@ def make_key_file(fileDamage, fileTemplate):
 def create_repaired_tree(tree, atomList):
     repairedTree = list()
     for atom in tree:
-        if atom.subAtoms is not None:
-            create_repaired_tree(atom, atomList)
-        else:
-            if atomList[atom.get_name()][0][0] == 1:
-                repairedTree.append(ds.Atom(atom.get_name()))    
-    return repairedTree             
+        if atomList[atom.get_name()][0] == 1:
+            curAtom = ds.Atom(atom.get_name())
+            if atom.subAtoms:
+                subAtoms = create_repaired_tree(atom.subAtoms, atomList)
+                curAtom.add_subAtoms(subAtoms)
+            repairedTree.append(curAtom)    
+    return repairedTree
+
+def clone_template_data():
+    pass
+
+def main(fileDemage, fileTemplate):
+    with open(fileDemage,'rb') as fDemage, open(fileTemplate, 'rb') as fTemplate:
+        lim = sa.get_file_size(fTemplate)
+        treeTemplate = sa.create_atom_list(fTemplate, lim)
+        tree = create_repaired_tree(treeTemplate, ds.sign)
+    print (tree)
+
+main('562965', 'FILE0137.MOV')
