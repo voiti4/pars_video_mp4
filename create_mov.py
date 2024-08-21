@@ -13,19 +13,27 @@ def make_key_file(fileDamage, fileTemplate):
             fileDamage.seek(key[0])
             fileTarget.write(fileDamage.read(key[1]))
 
-def create_repaired_tree(tree, atomList):
+def create_repaired_tree(tree, atomList=ds.sign):
     repairedTree = list()
     for atom in tree:
         if atomList[atom.get_name()][0] == 1:
-            curAtom = ds.Atom(atom.get_name())
+            if atomList[atom.get_name()][1] == "var":
+                curAtom = ds.Atom(atom.get_name(), atom.get_start(), 8)
+            else:
+                 curAtom = ds.Atom(atom.get_name(), atom.get_start(), atom.get_size())   
             if atom.subAtoms:
                 subAtoms = create_repaired_tree(atom.subAtoms, atomList)
                 curAtom.add_subAtoms(subAtoms)
             repairedTree.append(curAtom)    
     return repairedTree
 
-def clone_template_data():
-    pass
+def clone_template_data(fileTemplate):
+    lim = sa.get_file_size(fileTemplate)
+    tree = sa.create_atom_list(fileTemplate, lim)
+    treeSeek = create_repaired_tree(tree)
+    for atom in treeSeek:
+        pass
+
 
 def main(fileDemage, fileTemplate):
     with open(fileDemage,'rb') as fDemage, open(fileTemplate, 'rb') as fTemplate:
