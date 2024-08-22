@@ -25,6 +25,8 @@ class Atom:
             level += 1
             for atom in self.subAtoms:
                 atom.print_item(level)    
+    
+
 
 
 class Stsc(Atom):

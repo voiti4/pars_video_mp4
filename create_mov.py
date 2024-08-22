@@ -27,12 +27,17 @@ def create_repaired_tree(tree, atomList=ds.sign):
             repairedTree.append(curAtom)    
     return repairedTree
 
-def clone_template_data(fileTemplate):
+def create_repaired_file(fileDamage, fileTemplate):
     lim = sa.get_file_size(fileTemplate)
     tree = sa.create_atom_list(fileTemplate, lim)
     treeSeek = create_repaired_tree(tree)
-    for atom in treeSeek:
-        pass
+    keyFrames = sa.find_key_in_damage(fileDamage, fileTemplate)
+    name = 'repaired_' + fileDamage.name
+    with open(name,'wb') as fileTarget:
+        for atom in treeSeek:
+            if atom.get_name() == b'mdat':
+                pass 
+   
 
 
 def main(fileDemage, fileTemplate):
